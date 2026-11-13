@@ -70,7 +70,7 @@
       <a class="brand" href="${link('index.html')}" aria-label="Docora — ${esc(t.nav.home)}">
         ${logo(38)}<span>docora<span class="brand-dot">.</span></span>
       </a>
-      <nav id="primary-nav" class="site-nav" aria-label="${esc(t.nav.menu)}" popover="auto">
+      <nav id="primary-nav" class="site-nav" aria-label="${esc(t.nav.menu)}">
         <a ${page==='home'?'aria-current="page"':''} href="${link('index.html')}#features">${esc(t.nav.features)}</a>
         <a ${page==='support'?'aria-current="page"':''} href="${link('support.html')}">${esc(t.nav.support)}</a>
         <a ${page==='privacy'?'aria-current="page"':''} href="${link('privacy.html')}">${esc(t.nav.privacy)}</a>
@@ -129,9 +129,19 @@
       </div>
 
       <div class="workspace-canvas">
-        <button type="button" class="floating-chip chip-scan" data-screen="scan" aria-label="Tarama Modu">
-          ${svg('scan', 16)} <span>SCAN</span>
-        </button>
+        ${isScan ? `
+          <button type="button" class="floating-chip chip-left" data-screen="view" aria-label="${esc(t.home.previewTabs.view)}">
+            ${svg('file', 15)} <span>${esc(t.home.previewTabs.view)}</span>
+          </button>
+        ` : isSign ? `
+          <button type="button" class="floating-chip chip-left" data-screen="view" aria-label="${esc(t.home.previewTabs.view)}">
+            ${svg('file', 15)} <span>${esc(t.home.previewTabs.view)}</span>
+          </button>
+        ` : `
+          <button type="button" class="floating-chip chip-scan" data-screen="scan" aria-label="${esc(t.home.previewTabs.scan)}">
+            ${svg('scan', 15)} <span>${esc(t.home.previewTabs.scan)}</span>
+          </button>
+        `}
 
         <div class="paper-shadow"></div>
 
@@ -157,10 +167,10 @@
               <div class="paper-title-line short"></div>
               <div class="paper-lines"><i></i><i></i><i></i><i></i></div>
               <div class="paper-signature signed-stamp">
-                <svg viewBox="0 0 140 42" width="130" height="40" fill="none">
+                <svg viewBox="0 0 140 42" width="130" height="40" fill="none" aria-hidden="true">
                   <path d="M4 31C20 10 24 9 21 23c-2 11-7 15 1 11 9-6 16-24 18-21 2 4-10 27 0 19 6-4 15-18 19-13 3 3-5 14 0 13 12-3 17-12 27-11 7 1 13 3 23-6" stroke="#c80d25" stroke-width="2.2" stroke-linecap="round"/>
                 </svg>
-                <span class="cert-pill">${svg('shield', 13)} ${esc(t.home.signCert)}</span>
+                <span class="signed-tag">${svg('check', 13)} ${esc(badge)}</span>
               </div>
             ` : `
               <div class="paper-accent"></div>
@@ -168,7 +178,7 @@
               <div class="paper-title-line short"></div>
               <div class="paper-lines"><i></i><i></i><i></i><i></i></div>
               <div class="paper-signature">
-                <svg viewBox="0 0 140 42" width="130" height="40" fill="none">
+                <svg viewBox="0 0 140 42" width="130" height="40" fill="none" aria-hidden="true">
                   <path d="M4 31C20 10 24 9 21 23c-2 11-7 15 1 11 9-6 16-24 18-21 2 4-10 27 0 19 6-4 15-18 19-13 3 3-5 14 0 13 12-3 17-12 27-11 7 1 13 3 23-6" stroke="#c80d25" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
                 </svg>
               </div>
@@ -181,14 +191,28 @@
           </div>
         </div>
 
-        <button type="button" class="floating-chip chip-sign" data-screen="sign" aria-label="İmza Modu">
-          ${svg('signature', 16)} <span>PDF</span>
-        </button>
+        ${isScan ? `
+          <button type="button" class="floating-chip chip-sign" data-screen="sign" aria-label="${esc(t.home.previewTabs.sign)}">
+            ${svg('signature', 15)} <span>${esc(t.home.previewTabs.sign)}</span>
+          </button>
+        ` : isSign ? `
+          <button type="button" class="floating-chip chip-scan" data-screen="scan" aria-label="${esc(t.home.previewTabs.scan)}">
+            ${svg('scan', 15)} <span>${esc(t.home.previewTabs.scan)}</span>
+          </button>
+        ` : `
+          <button type="button" class="floating-chip chip-sign" data-screen="sign" aria-label="${esc(t.home.previewTabs.sign)}">
+            ${svg('signature', 15)} <span>${esc(t.home.previewTabs.sign)}</span>
+          </button>
+        `}
       </div>
 
       <div class="workspace-bottom">
         <span>${svg('check', 16)} ${esc(t.home.previewNote)}</span>
-        <div class="workspace-dots"><i></i><i></i><i></i></div>
+        <div class="workspace-dots" role="tablist" aria-label="Önizleme Sayfaları">
+          <button type="button" class="dot-btn ${currentPreviewScreen==='view'?'active':''}" data-screen="view" aria-label="${esc(t.home.previewTabs.view)}"></button>
+          <button type="button" class="dot-btn ${currentPreviewScreen==='scan'?'active':''}" data-screen="scan" aria-label="${esc(t.home.previewTabs.scan)}"></button>
+          <button type="button" class="dot-btn ${currentPreviewScreen==='sign'?'active':''}" data-screen="sign" aria-label="${esc(t.home.previewTabs.sign)}"></button>
+        </div>
       </div>
     </div>`;
   };
@@ -425,9 +449,25 @@
       render();
     });
 
-    // Responsive Popover menu toggle (Modern Web Guidance navbar)
+    // Responsive Popover menu synchronization (Modern Web Guidance navbar)
     const menuBtn = document.querySelector('.menu-toggle');
     const nav = document.getElementById('primary-nav');
+    if (nav) {
+      const isMobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+      if (isMobile) {
+        if (Object.hasOwn(HTMLElement.prototype, 'popover')) {
+          nav.setAttribute('popover', 'auto');
+        }
+      } else {
+        if (Object.hasOwn(HTMLElement.prototype, 'popover')) {
+          try { nav.hidePopover(); } catch (e) {}
+          nav.removeAttribute('popover');
+        }
+        nav.classList.remove('open');
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+      }
+    }
+
     if (menuBtn && nav) {
       if (Object.hasOwn(HTMLElement.prototype, 'popover')) {
         nav.addEventListener('toggle', (e) => {
@@ -450,29 +490,46 @@
         });
       });
     }
+  }
 
-    // Interactive hero workspace tabs & chips
-    document.querySelectorAll('[data-screen]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const screen = btn.dataset.screen;
-        if (screen && currentPreviewScreen !== screen) {
-          currentPreviewScreen = screen;
-          const heroVisual = document.querySelector('.hero-visual');
-          if (heroVisual) {
-            heroVisual.innerHTML = visual(t);
-            // Re-bind listeners for new DOM elements inside hero visual
-            heroVisual.querySelectorAll('[data-screen]').forEach(subBtn => {
-              subBtn.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                currentPreviewScreen = subBtn.dataset.screen;
-                heroVisual.innerHTML = visual(t);
-              });
-            });
-          }
+  // Delegated event listener for interactive hero workspace (view, scan, sign)
+  // Ensures infinite cycling back and forth without ever losing listeners on dynamic re-renders
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-screen]');
+    if (!btn) return;
+    const target = btn.dataset.screen;
+    if (!target) return;
+    e.preventDefault();
+    if (currentPreviewScreen === target) return;
+    currentPreviewScreen = target;
+    const heroVisual = document.querySelector('.hero-visual');
+    if (heroVisual) {
+      heroVisual.innerHTML = visual(dictionary[lang]);
+    }
+  });
+
+  // Responsive breakpoint listener for nav popover attribute
+  if (window.matchMedia) {
+    const navMql = window.matchMedia('(max-width: 900px)');
+    const handleNavMql = () => {
+      const nav = document.getElementById('primary-nav');
+      const menuBtn = document.querySelector('.menu-toggle');
+      if (!nav) return;
+      if (navMql.matches) {
+        if (Object.hasOwn(HTMLElement.prototype, 'popover')) {
+          nav.setAttribute('popover', 'auto');
         }
-      });
-    });
+      } else {
+        if (Object.hasOwn(HTMLElement.prototype, 'popover')) {
+          try { nav.hidePopover(); } catch (e) {}
+          nav.removeAttribute('popover');
+        }
+        nav.classList.remove('open');
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+      }
+    };
+    if (navMql.addEventListener) navMql.addEventListener('change', handleNavMql);
+    else navMql.addListener(handleNavMql);
   }
 
   // Cross-tab synchronization for theme overrides (Modern Web Guidance dark-mode-toggle)
